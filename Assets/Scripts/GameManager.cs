@@ -20,9 +20,8 @@ public class GameManager : MonoBehaviour
 
     public event EventHandler SelectedControlGroupChanged;
 
-    private const float boxSelectionThreshold = 10f;
-
     public bool isShiftDown = false;
+    public bool isControlDown = false;
 
     private void Start()
     {
@@ -32,22 +31,18 @@ public class GameManager : MonoBehaviour
 
     public void Update()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
-        {
-            isShiftDown = true;
-        }
+        HandleMouseInput();
+        HandleKeyboardInput();
+    }
 
-        if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift))
-        {
-            isShiftDown = false;
-        }
-
+    private void HandleMouseInput()
+    {
         if (Input.GetMouseButtonDown(1))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
             RaycastHit hit;
-            
+
             if (Physics.Raycast(ray, out hit))
             {
                 Vector3 destination = hit.point;
@@ -63,16 +58,40 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (Input.GetMouseButtonDown(0)) {
+        if (Input.GetMouseButtonDown(0))
+        {
             BoxSelection.Instance.mouseButtonWentDown();
         }
 
-        if (Input.GetMouseButton(0)) {
+        if (Input.GetMouseButton(0))
+        {
             BoxSelection.Instance.MouseButtonIsDown();
         }
 
-        if (Input.GetMouseButtonUp(0)) {
+        if (Input.GetMouseButtonUp(0))
+        {
             BoxSelection.Instance.mouseButtonWentUp();
+        }
+    }
+
+    private void HandleKeyboardInput()
+    {
+        if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
+        {
+            isShiftDown = true;
+        }
+        else (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift))
+        {
+            isShiftDown = false;
+        }
+
+        if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl))
+        {
+            isControlDown = true;
+        }
+        else (Input.GetKeyUp(KeyCode.LeftControl) || Input.GetKeyUp(KeyCode.RightControl))
+        {
+            isControlDown = false;
         }
 
         // Control groups
@@ -134,7 +153,7 @@ public class GameManager : MonoBehaviour
 
         Debug.Log("BoxSelect called");
 
-        if (selectionBox.xMax > selectionBox.xMin + boxSelectionThreshold && selectionBox.yMax > selectionBox.yMin + boxSelectionThreshold) {
+        if (selectionBox.xMax > selectionBox.xMin && selectionBox.yMax > selectionBox.yMin) {
             if (!isShiftDown) {
                 DeselectAllUnits();
 

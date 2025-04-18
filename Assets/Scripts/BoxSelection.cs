@@ -12,8 +12,8 @@ public class BoxSelection : MonoBehaviour
     private Vector2 startPosition;
     private Vector2 endPosition;
 
-    private bool wasDragging = false;
-    private bool mouseWentDown = false;
+    private bool isMouseDown = false;
+    private bool isBoxSelecting = false;
 
     public void Start()
     {
@@ -26,9 +26,9 @@ public class BoxSelection : MonoBehaviour
     }
 
     public void mouseButtonWentUp() {
-        if (mouseWentDown && wasDragging) {
-            mouseWentDown = false;
-            wasDragging = false;
+        if (isMouseDown && isBoxSelecting) {
+            isMouseDown = false;
+            isBoxSelecting = false;
 
             startPosition = Vector2.zero;
             endPosition = Vector2.zero;
@@ -44,7 +44,7 @@ public class BoxSelection : MonoBehaviour
     }
 
     public void mouseButtonWentDown() {
-        mouseWentDown = true;
+        isMouseDown = true;
 
         startPosition = Input.mousePosition;
 
@@ -56,7 +56,7 @@ public class BoxSelection : MonoBehaviour
     }
 
     public void MouseButtonIsDown() {
-        wasDragging = true;
+        isBoxSelecting = true;
 
         endPosition = Input.mousePosition;
 
