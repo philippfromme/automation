@@ -1,9 +1,6 @@
-﻿namespace Assets.Scripts.Enums
+﻿public enum SelectableType
 {
-    public enum SelectableType
-    {
-        Unit,
-        Building,
-        Resource
-    }
+    Unit,
+    Building,
+    Resource
 }
