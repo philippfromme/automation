@@ -1,6 +1,6 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 
 public class ControlGroups
@@ -11,9 +11,16 @@ public class ControlGroups
 
     private ILogger _logger;
 
+    public event EventHandler ControlGroupsChanged;
+
     public ControlGroups(ILogger logger)
     {
         _logger = logger;
+    }
+
+    protected virtual void OnControlGroupsChanged()
+    {
+        ControlGroupsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void AddGroup(int groupNumber, List<SelectableObject> selectableObjects)
@@ -57,6 +64,8 @@ public class ControlGroups
         {
             _logger.Log("Group " + group.Key + ": " + string.Join(", ", group.Value.Count));
         }
+
+        OnControlGroupsChanged();
     }
 
     public void RemoveGroup(int groupNumber)
@@ -70,6 +79,8 @@ public class ControlGroups
         {
             _controlGroups.Remove(groupNumber);
         }
+
+        OnControlGroupsChanged();
     }
 
     public List<SelectableObject> GetGroup(int groupNumber)
@@ -85,5 +96,10 @@ public class ControlGroups
         }
 
         return null;
+    }
+
+    public Dictionary<int, List<SelectableObject>> GetControlGroups()
+    {
+        return _controlGroups;
     }
 }

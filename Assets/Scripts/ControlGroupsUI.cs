@@ -11,36 +11,48 @@ public class ControlGroupButton
     public Action onClick;
 }
 
+public class ControlGroupButtonClickedEventArgs : EventArgs
+{
+    public int controlGroupNumber;
+    public ControlGroupButtonClickedEventArgs(int controlGroupNumber)
+    {
+        this.controlGroupNumber = controlGroupNumber;
+    }
+
+}
+
 public class ControlGroupsUI : MonoBehaviour
 {
-    private UIDocument uiDocument;
-    private VisualElement controlGroups;
+    private VisualElement controlGroupsElement;
 
     public VisualTreeAsset controlGroupButtonTemplate;
 
     [SerializeField]
     private List<ControlGroupButton> controlGroupButtons;
 
-    [SerializeField]
-    private int selectedControlGroup = -1;
+    public EventHandler<ControlGroupButtonClickedEventArgs> controlGroupButtonClicked;
 
     private void OnEnable()
     {
         controlGroupButtons = new List<ControlGroupButton>();
 
-        uiDocument = GetComponent<UIDocument>();
+        controlGroupsElement = GetComponent<UIDocument>().rootVisualElement.Q<VisualElement>("ControlGroups");
 
-        controlGroups = uiDocument.rootVisualElement.Q<VisualElement>("ControlGroups");
+        GameManager gameManager = FindObjectOfType<GameManager>();
 
-        //AddControlGroup(1, () => Debug.Log("Control Group 1 clicked"));
-        //AddControlGroup(6, () => Debug.Log("Control Group 6 clicked"));
-        //AddControlGroup(3, () => Debug.Log("Control Group 2 clicked"));
-        //AddControlGroup(2, () => Debug.Log("Control Group 3 clicked"));
-        //AddControlGroup(4, () => Debug.Log("Control Group 4 clicked"));
-        //AddControlGroup(5, () => Debug.Log("Control Group 5 clicked"));
-        //AddControlGroup(5, () => Debug.Log("Control Group 5 clicked"));
+        gameManager.ControlGroups.ControlGroupsChanged += (sender, e) =>
+        {
+            Debug.Log("Control groups have changed!");
 
-        //SetSelectedControlGroup(2);
+            Rerender();
+        };
+
+        gameManager.SelectedControlGroupChanged += (sender, e) =>
+        {
+            Debug.Log("Selected control group has changed: " + gameManager.SelectedControlGroup);
+
+            SetSelectedControlGroup(gameManager.SelectedControlGroup);
+        };
     }
 
     private void OnButtonClicked(ClickEvent evt, int index)
@@ -48,57 +60,36 @@ public class ControlGroupsUI : MonoBehaviour
         controlGroupButtons[index].onClick?.Invoke();
     }
 
-    public void AddControlGroup(int controlGroupNumber, Action onClick)
+    public void Rerender()
     {
-        var existing = controlGroupButtons.Find(x => x.controlGroupNumber == controlGroupNumber);
+        controlGroupsElement.Clear();
 
-        if (existing != null)
-            controlGroupButtons.Remove(existing);
+        GameManager gameManager = FindObjectOfType<GameManager>();
 
-        controlGroupButtons.Add(new ControlGroupButton
+        ControlGroups controlGroups = gameManager.ControlGroups;
+
+        foreach (var group in controlGroups.GetControlGroups())
         {
-            controlGroupNumber = controlGroupNumber,
-            onClick = onClick
-        });
-
-        controlGroupButtons.Sort((a, b) => a.controlGroupNumber.CompareTo(b.controlGroupNumber));
-
-        controlGroups.Clear();
-
-        for (int i = 0; i < controlGroupButtons.Count; i++)
-        {
-            var button = controlGroupButtonTemplate.CloneTree();
-
-            button.Q<Button>().text = controlGroupButtons[i].controlGroupNumber.ToString();
-            button.Q<Button>().RegisterCallback<ClickEvent>(evt => OnButtonClicked(evt, i));
-
-            controlGroups.Add(button);
-        }
-    }
-
-    public void RemoveControlGroup(int controlGroupNumber)
-    {
-        for (int i = 0; i < controlGroups.childCount; i++)
-        {
-            if (controlGroupButtons[i].controlGroupNumber == controlGroupNumber)
+            ControlGroupButton controlGroupButton = new ControlGroupButton
             {
-                controlGroupButtons.RemoveAt(i);
+                controlGroupNumber = group.Key,
+                onClick = () =>
+                {
+                    gameManager.SelectControlGroup(group.Key);
+                }
+            };
 
-                controlGroups.RemoveAt(i);
-
-                break;
-            }
+            controlGroupButtons.Add(controlGroupButton);
         }
     }
 
     public void SetSelectedControlGroup(int controlGroupNumber)
     {
-        selectedControlGroup = controlGroupNumber;
-
-        for (int i = 0; i < controlGroups.childCount; i++)
+        for (int i = 0; i < controlGroupsElement.childCount; i++)
         {
-            var button = controlGroups[i].Q<Button>();
-            if (controlGroupButtons[i].controlGroupNumber == selectedControlGroup)
+            var button = controlGroupsElement[i].Q<Button>();
+
+            if (controlGroupButtons[i].controlGroupNumber == controlGroupNumber)
             {
                 button.AddToClassList("selected");
             }

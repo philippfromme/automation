@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 public class GameManager : MonoBehaviour
 {
@@ -13,7 +14,11 @@ public class GameManager : MonoBehaviour
 
     public GameObject DestinationSprite;
 
-    private ControlGroups _controlGroups = new ControlGroups(Debug.unityLogger);
+    public ControlGroups ControlGroups = new ControlGroups(Debug.unityLogger);
+
+    public int SelectedControlGroup = -1;
+
+    public event EventHandler SelectedControlGroupChanged;
 
     private const float boxSelectionThreshold = 10f;
 
@@ -87,6 +92,11 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    protected virtual void OnSelectedControlGroupChanged()
+    {
+        SelectedControlGroupChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void AddUnit(Unit unit)
     {
         _units.Add(unit);
@@ -147,56 +157,36 @@ public class GameManager : MonoBehaviour
         {
             DeselectAllUnits();
         }
+
+        SelectedControlGroup = -1;
+        OnSelectedControlGroupChanged();
     }
 
     private void AddControlGroup(int keyNumber)
     {
-        _controlGroups.AddGroup(keyNumber, _selectedUnits.Select(n => n.selectableObject).ToList());
+        ControlGroups.AddGroup(keyNumber, _selectedUnits.Select(n => n.selectableObject).ToList());
 
-        ControlGroupsUI controlGroupsUI = FindObjectOfType<ControlGroupsUI>();
+        SelectedControlGroup = keyNumber;
 
-        if (controlGroupsUI != null)
-        {
-            controlGroupsUI.AddControlGroup(keyNumber, () => SelectControlGroup(keyNumber));
-
-            controlGroupsUI.SetSelectedControlGroup(keyNumber);
-
-            for (int i = 0; i < 10; i++)
-            {
-                Debug.Log("Checking control group " + i + ": " + _controlGroups.GetGroup(i)?.Count);
-
-                if (_controlGroups.GetGroup(keyNumber) == null || _controlGroups.GetGroup(keyNumber).Count == 0)
-                {
-                    Debug.Log("Control group " + keyNumber + " is empty, removing UI.");
-
-                    controlGroupsUI.RemoveControlGroup(keyNumber);
-                    break;
-                }
-            }
-        }
+        OnSelectedControlGroupChanged();
     }
 
-    private void SelectControlGroup(int keyNumber)
+    public void SelectControlGroup(int keyNumber)
     {
         DeselectAllUnits();
 
-        if (_controlGroups.GetGroup(keyNumber) == null || _controlGroups.GetGroup(keyNumber).Count == 0)
+        if (ControlGroups.GetGroup(keyNumber) == null || ControlGroups.GetGroup(keyNumber).Count == 0)
         {
-            Debug.Log("Control group " + keyNumber + " is empty.");
+            SelectedControlGroup = -1;
 
             return;
         }
 
-        foreach (var selectableObject in _controlGroups.GetGroup(keyNumber))
+        foreach (var selectableObject in ControlGroups.GetGroup(keyNumber))
         {
             SelectUnit(selectableObject.unit, true);
         }
 
-        ControlGroupsUI controlGroupsUI = FindObjectOfType<ControlGroupsUI>();
-
-        if (controlGroupsUI != null)
-        {
-            controlGroupsUI.SetSelectedControlGroup(keyNumber);
-        }
+        OnSelectedControlGroupChanged();
     }
 }
